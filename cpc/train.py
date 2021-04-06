@@ -20,6 +20,7 @@ import cpc.feature_loader as fl
 from cpc.cpc_default_config import set_default_cpc_config
 from cpc.dataset import AudioBatchData, findAllSeqs, filterSeqs, parseSeqLabels
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def getCriterion(args, downsampling, nSpeakers, nPhones):
     dimFeatures = args.hiddenGar if not args.onEncoder else args.hiddenEncoder
@@ -78,8 +79,9 @@ def trainStep(dataLoader,
     for step, fulldata in enumerate(dataLoader):
         batchData, label = fulldata
         n_examples += batchData.size(0)
-        batchData = batchData.cuda(non_blocking=True)
-        label = label.cuda(non_blocking=True)
+        if device == "cuda":
+            batchData = batchData.cuda(non_blocking=True)
+            label = label.cuda(non_blocking=True)
         c_feature, encoded_data, label = cpcModel(batchData, label)
         allLosses, allAcc = cpcCriterion(c_feature, encoded_data, label)
         totLoss = allLosses.sum()
@@ -134,8 +136,9 @@ def valStep(dataLoader,
 
         batchData, label = fulldata
 
-        batchData = batchData.cuda(non_blocking=True)
-        label = label.cuda(non_blocking=True)
+        if device == "cuda":
+            batchData = batchData.cuda(non_blocking=True)
+            label = label.cuda(non_blocking=True)
 
         with torch.no_grad():
             c_feature, encoded_data, label = cpcModel(batchData, label)
@@ -195,7 +198,8 @@ def run(trainDataset,
         print(f'Ran {epoch + 1} epochs '
               f'in {time.time() - start_time:.2f} seconds')
 
-        torch.cuda.empty_cache()
+        if device == "cuda":
+            torch.cuda.empty_cache()
 
         currentAccuracy = float(locLogsVal["locAcc_val"].mean())
         if currentAccuracy > bestAcc:
@@ -325,8 +329,9 @@ def main(args):
         state_dict = torch.load(args.load[0], 'cpu')
         cpcCriterion.load_state_dict(state_dict["cpcCriterion"])
 
-    cpcCriterion.cuda()
-    cpcModel.cuda()
+    if device == "cuda":
+        cpcCriterion.cuda()
+        cpcModel.cuda()
 
     # Optimizer
     g_params = list(cpcCriterion.parameters()) + list(cpcModel.parameters())
@@ -370,9 +375,13 @@ def main(args):
             scheduler.step()
 
     cpcModel = torch.nn.DataParallel(cpcModel,
-                                     device_ids=range(args.nGPU)).cuda()
+                                     device_ids=range(args.nGPU))
     cpcCriterion = torch.nn.DataParallel(cpcCriterion,
-                                         device_ids=range(args.nGPU)).cuda()
+                                         device_ids=range(args.nGPU))
+
+    if device == "cuda":
+        cpcModel = cpcModel.cuda()
+        cpcCriterion = cpcCriterion.cuda()
 
     run(trainDataset,
         valDataset,
@@ -478,9 +487,10 @@ def parseArgs(argv):
 
     if args.nGPU < 0:
         args.nGPU = torch.cuda.device_count()
-    assert args.nGPU <= torch.cuda.device_count(),\
-        f"number of GPU asked: {args.nGPU}," \
-        f"number GPU detected: {torch.cuda.device_count()}"
+    if device == "cuda":
+        assert args.nGPU <= torch.cuda.device_count(),\
+            f"number of GPU asked: {args.nGPU}," \
+            f"number GPU detected: {torch.cuda.device_count()}"
     print(f"Let's use {args.nGPU} GPUs!")
 
     if args.arMode == 'no_ar':
