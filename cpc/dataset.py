@@ -16,6 +16,7 @@ from torch.utils.data.sampler import Sampler, BatchSampler
 
 import torchaudio
 
+torch.multiprocessing.set_sharing_strategy('file_system')
 
 class AudioBatchData(Dataset):
 
