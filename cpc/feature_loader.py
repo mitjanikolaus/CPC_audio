@@ -11,6 +11,7 @@ from .cpc_default_config import get_default_cpc_config
 from .dataset import parseSeqLabels
 from .model import CPCModel, ConcatenatedModel
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 class FeatureModule(torch.nn.Module):
     r"""
@@ -30,7 +31,9 @@ class FeatureModule(torch.nn.Module):
     def forward(self, data):
 
         batchAudio, label = data
-        cFeature, encoded, _ = self.featureMaker(batchAudio.cuda(), label)
+        if device == "cuda":
+            batchAudio = batchAudio.cuda()
+        cFeature, encoded, _ = self.featureMaker(batchAudio, label)
         if self.get_encoded:
             cFeature = encoded
         if self.collapse:
@@ -158,7 +161,10 @@ def loadModel(pathCheckpoints, loadStateDict=True):
     hiddenGar, hiddenEncoder = 0, 0
     for path in pathCheckpoints:
         print(f"Loading checkpoint {path}")
-        _, _, locArgs = getCheckpointData(os.path.dirname(path))
+        # TODO: correct?
+        locArgs = get_default_cpc_config()
+        locArgs.load = None
+        # _, _, locArgs = getCheckpointData(os.path.dirname(path))
 
         doLoad = locArgs.load is not None and \
             (len(locArgs.load) > 1 or
@@ -248,7 +254,9 @@ def buildFeature(featureMaker, seqPath, strict=False,
         if strict and start + maxSizeSeq > sizeSeq:
             break
         end = min(sizeSeq, start + maxSizeSeq)
-        subseq = (seq[:, start:end]).view(1, 1, -1).cuda(device=0)
+        subseq = (seq[:, start:end]).view(1, 1, -1)
+        if device == "cuda":
+            subseq = subseq.cuda(device=0)
         with torch.no_grad():
             features = featureMaker((subseq, None))
             if seqNorm:

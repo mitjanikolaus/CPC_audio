@@ -25,8 +25,7 @@ def adjust_sample_rate(path_db, file_list, path_db_out,
                                                    new_freq=target_sr,
                                                    resampling_method='sinc_interpolation')
         data = transform(data)
-        torchaudio.save(path_out, data, target_sr,
-                        precision=16, channels_first=True)
+        torchaudio.save(path_out, data, target_sr, channels_first=True)
 
     bar.finish()
 
@@ -80,6 +79,8 @@ def main(argv):
             index_phone += 1
             if index_phone >= len(file_list_phone):
                 break
+        if index_phone >= len(file_list_phone):
+            break
         if Path(file_name).stem == file_list_phone[index_phone]:
             out_list.append(file_name)
 

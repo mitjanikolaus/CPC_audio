@@ -13,6 +13,7 @@ from cpc.dataset import findAllSeqs
 from cpc.feature_loader import buildFeature, FeatureModule, \
     ModelPhoneCombined, loadSupervisedCriterion, loadModel
 
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def getArgs(pathCheckpoints):
     pathArgs = os.path.join(os.path.dirname(pathCheckpoints),
@@ -120,7 +121,8 @@ if __name__ == "__main__":
         criterion, nPhones = loadSupervisedCriterion(args.pathCheckpoint)
         featureMaker = ModelPhoneCombined(featureMaker, criterion,
                                           nPhones, args.oneHot)
-    featureMaker = featureMaker.cuda(device=0)
+    if device == "cuda":
+        featureMaker = featureMaker.cuda(device=0)
 
     if not args.train_mode:
         featureMaker.eval()
