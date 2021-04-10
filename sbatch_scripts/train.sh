@@ -12,5 +12,6 @@
 
 source activate cpc37
 
-python -u cpc/train.py --pathDB ~/data/librispeech/train-clean-100/LibriSpeech/train-clean-100/ --pathTrain data_splits/train_split.txt   --debug
+python -u cpc/train.py --pathDB ~/data/librispeech/train-clean-100/LibriSpeech/train-clean-100/ --pathTrain data_splits/train_split.txt --pathVal data_splits/test_split.txt --pathCheckpoint checkpoints/ --n_process_loader 8 --restart --ignore_cache
 
+# verify: --restart or continue training?
