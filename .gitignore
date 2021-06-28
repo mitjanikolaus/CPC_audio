@@ -5,7 +5,6 @@ __pycache__
 CPC_audio.egg-info/
 build/
 cpc/eval/
-cpc/eval/
 cpc/test_data/test_db/
 out/
 
