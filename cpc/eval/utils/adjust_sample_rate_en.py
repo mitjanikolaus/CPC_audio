@@ -69,6 +69,11 @@ def main(argv):
 
     file_list_db = file_list_db[:MAX_SAMPLES-1]
     file_list_db.sort()
+
+    with open('data_splits/common_voices_splits/en/trainSeqs_all_16k.txt', 'w') as file:
+        for file_name in file_list_db:
+            file.write(f"{file_name.split('.mp3')[0]}\n")
+
     print(f"Converting {len(file_list_db)} files")
 
 
