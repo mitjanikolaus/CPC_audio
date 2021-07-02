@@ -170,6 +170,14 @@ def run(trainDataset,
         scheduler,
         logs):
 
+    print(f"Saving initial checkpoint")
+    modelStateDict = fl.get_module(cpcModel).state_dict()
+    criterionStateDict = fl.get_module(cpcCriterion).state_dict()
+
+    fl.save_checkpoint(modelStateDict, criterionStateDict,
+                       optimizer.state_dict(), modelStateDict,
+                       f"{pathCheckpoint}_init.pt")
+
     print(f"Running {nEpoch} epochs")
     startEpoch = len(logs["epoch"])
     bestAcc = 0
